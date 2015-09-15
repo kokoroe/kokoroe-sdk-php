@@ -336,24 +336,6 @@ class Response implements ResponseInterface
     }
 
     /**
-     * Test if a value is a string
-     *
-     * Used with array_reduce.
-     *
-     * @param bool $carry
-     * @param mixed $item
-     * @return bool
-     */
-    private static function filterStringValue($carry, $item)
-    {
-        if (!is_string($item)) {
-            return false;
-        }
-
-        return $carry;
-    }
-
-    /**
      * Test that an array contains only strings
      *
      * @param array $array
@@ -361,7 +343,13 @@ class Response implements ResponseInterface
      */
     private function arrayContainsOnlyStrings(array $array)
     {
-        return array_reduce($array, [__CLASS__, 'filterStringValue'], true);
+        return array_reduce($array, function($carry, $item) {
+            if (!is_string($item)) {
+                return false;
+            }
+
+            return $carry;
+        }, true);
     }
 
     /**
