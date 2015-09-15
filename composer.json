@@ -1,0 +1,34 @@
+{
+    "name": "kokoroe/kokoroe-sdk-php",
+    "description": "Kokoroe SDK for PHP",
+    "keywords": ["kokoroe", "sdk", "api"],
+    "type": "library",
+    "homepage": "https://github.com/kokoroe/kokoroe-sdk-php",
+    "license": "MIT",
+    "require": {
+        "ext-curl": "*",
+        "psr/http-message": "~1.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^4.7",
+        "leaphub/phpcs-symfony2-standard": "~2.0.1",
+        "phpmd/phpmd": "@stable",
+        "satooshi/php-coveralls": "dev-master"
+    },
+    "authors": [
+        {
+            "name": "Kokoroe",
+            "homepage": "https://github.com/kokoroe/kokoroe-sdk-php/contributors"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Kokoroe\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Kokoroe\\Tests\\": "tests/"
+        }
+    }
+}
