@@ -4,7 +4,7 @@
 [![SensioLabs Insight](https://img.shields.io/sensiolabs/i/8d361bb3-7b77-4888-87f4-e72f29dd9d18.svg)](https://insight.sensiolabs.com/projects/8d361bb3-7b77-4888-87f4-e72f29dd9d18)
 [![Coveralls](https://img.shields.io/coveralls/kokoroe/kokoroe-sdk-php.svg)](https://coveralls.io/github/kokoroe/kokoroe-sdk-php)
 [![HHVM](https://img.shields.io/hhvm/kokoroe/kokoroe-sdk-php.svg)](https://travis-ci.org/kokoroe/kokoroe-sdk-php)
-[![Packagist](https://img.shields.io/packagist/v/symfony/symfony.svg)](https://packagist.org/packages/kokoroe/kokoroe-sdk-php)
+[![Packagist](https://img.shields.io/packagist/v/kokoroe/kokoroe-sdk-php.svg)](https://packagist.org/packages/kokoroe/kokoroe-sdk-php)
 
 ## Install
 
