@@ -33,6 +33,29 @@ class CurlTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf('Kokoroe\Http\Client\Adapter\AdapterInterface', $curl);
     }
 
+    public function testSslVerify()
+    {
+        $curl = new Curl();
+        $this->assertTrue($curl->isSslVerify());
+
+        $curl->setSslVerify(false);
+
+        $this->assertFalse($curl->isSslVerify());
+    }
+
+    public function testSendGetRequestWithoutSslVerify()
+    {
+        $curl = new Curl();
+        $curl->setSslVerify(false);
+
+        $response = $curl->send('GET', 'http://localhost:1337/?access_token=foo', null, [
+            'Accept' => 'application/json'
+        ], 2);
+
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEquals('{"access_token":"foo"}', (string) $response->getBody());
+    }
+
     public function testSendGetRequest()
     {
         $curl = new Curl();

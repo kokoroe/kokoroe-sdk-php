@@ -38,7 +38,9 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
             'client_secret'         => 'foo',
             'default_access_token'  => 'bar',
             'default_api_version'   => 'v1.2',
-            'default_api_url'       => 'https://test.kokoroe.co'
+            'default_api_url'       => 'https://test.kokoroe.co',
+            'locale'                => 'fr',
+            'ssl_verify'            => false
         ]);
 
         $this->assertEquals('v1.2', $kokoroe->getDefaultApiVersion());
@@ -46,6 +48,8 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('foo', $kokoroe->getClientSecret());
         $this->assertEquals('bar', $kokoroe->getDefaultAccessToken());
         $this->assertEquals($kokoroe->getDefaultApiUrl() . '/v1.2', $kokoroe->getBaseApiUrl());
+        $this->assertFalse($kokoroe->getSslVerify());
+        $this->assertEquals('fr', $kokoroe->getLocale());
     }
 
     /**
@@ -60,7 +64,11 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
 
     public function testClientHttp()
     {
+        $adapterMock = $this->getMock('Kokoroe\Http\Client\Adapter\AdapterInterface');
+
         $clientMock = $this->getMock('Kokoroe\Http\Client');
+        $clientMock->method('getAdapter')
+            ->will($this->returnValue($adapterMock));
 
         $kokoroe = new Kokoroe();
         $kokoroe->setHttpClient($clientMock);
@@ -76,14 +84,19 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
 
     public function testGetWithAccessToken()
     {
+        $adapterMock = $this->getMock('Kokoroe\Http\Client\Adapter\AdapterInterface');
+
         $clientMock = $this->getMock('Kokoroe\Http\Client');
+        $clientMock->method('getAdapter')
+            ->will($this->returnValue($adapterMock));
 
         $clientMock->method('get')
             ->with(
                 $this->equalTo(Kokoroe::BASE_API_URL . '/' . Kokoroe::DEFAULT_API_VERSION . '/me'),
                 $this->equalTo([]),
                 $this->equalTo([
-                    'Authorization' => 'Bearer foo'
+                    'Authorization' => 'Bearer foo',
+                    'Accept-Language' => 'en'
                 ])
             )
             ->will($this->returnValue([
@@ -107,14 +120,19 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
 
     public function testGetWithDefaultAccessToken()
     {
+        $adapterMock = $this->getMock('Kokoroe\Http\Client\Adapter\AdapterInterface');
+
         $clientMock = $this->getMock('Kokoroe\Http\Client');
+        $clientMock->method('getAdapter')
+            ->will($this->returnValue($adapterMock));
 
         $clientMock->method('get')
             ->with(
                 $this->equalTo(Kokoroe::BASE_API_URL . '/' . Kokoroe::DEFAULT_API_VERSION . '/me'),
                 $this->equalTo([]),
                 $this->equalTo([
-                    'Authorization' => 'Bearer bar'
+                    'Authorization' => 'Bearer bar',
+                    'Accept-Language' => 'en'
                 ])
             )
             ->will($this->returnValue([
@@ -139,7 +157,11 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
 
     public function testGetWithoutAccessToken()
     {
+        $adapterMock = $this->getMock('Kokoroe\Http\Client\Adapter\AdapterInterface');
+
         $clientMock = $this->getMock('Kokoroe\Http\Client');
+        $clientMock->method('getAdapter')
+            ->will($this->returnValue($adapterMock));
 
         $clientMock->method('get')
             ->with(
@@ -148,7 +170,8 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
                     'fields' => 'email'
                 ]),
                 $this->equalTo([
-                    'Authorization' => 'Basic MTcxYjM3OWUtNTdjZC0xMWU1LWFlYTgtZWIyYjNlYjk0ZmI5Og=='
+                    'Authorization' => 'Basic MTcxYjM3OWUtNTdjZC0xMWU1LWFlYTgtZWIyYjNlYjk0ZmI5Og==',
+                    'Accept-Language' => 'en'
                 ])
             )
             ->will($this->returnValue([
@@ -176,7 +199,11 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetWithoutClientId()
     {
+        $adapterMock = $this->getMock('Kokoroe\Http\Client\Adapter\AdapterInterface');
+
         $clientMock = $this->getMock('Kokoroe\Http\Client');
+        $clientMock->method('getAdapter')
+            ->will($this->returnValue($adapterMock));
 
         $kokoroe = new Kokoroe();
         $kokoroe->setHttpClient($clientMock);
@@ -190,7 +217,11 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetWithoutClientSecret()
     {
+        $adapterMock = $this->getMock('Kokoroe\Http\Client\Adapter\AdapterInterface');
+
         $clientMock = $this->getMock('Kokoroe\Http\Client');
+        $clientMock->method('getAdapter')
+            ->will($this->returnValue($adapterMock));
 
         $kokoroe = new Kokoroe([
             'client_id' => '171b379e-57cd-11e5-aea8-eb2b3eb94fb9'
@@ -202,7 +233,11 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
 
     public function testPostWithAccessToken()
     {
+        $adapterMock = $this->getMock('Kokoroe\Http\Client\Adapter\AdapterInterface');
+
         $clientMock = $this->getMock('Kokoroe\Http\Client');
+        $clientMock->method('getAdapter')
+            ->will($this->returnValue($adapterMock));
 
         $clientMock->method('post')
             ->with(
@@ -210,7 +245,8 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
                 $this->equalTo([]),
                 $this->equalTo('bar'),
                 $this->equalTo([
-                    'Authorization' => 'Bearer foo'
+                    'Authorization' => 'Bearer foo',
+                    'Accept-Language' => 'en'
                 ])
             )
             ->will($this->returnValue([
@@ -234,7 +270,11 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
 
     public function testPutWithAccessToken()
     {
+        $adapterMock = $this->getMock('Kokoroe\Http\Client\Adapter\AdapterInterface');
+
         $clientMock = $this->getMock('Kokoroe\Http\Client');
+        $clientMock->method('getAdapter')
+            ->will($this->returnValue($adapterMock));
 
         $clientMock->method('put')
             ->with(
@@ -242,7 +282,8 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
                 $this->equalTo([]),
                 $this->equalTo('bar'),
                 $this->equalTo([
-                    'Authorization' => 'Bearer foo'
+                    'Authorization' => 'Bearer foo',
+                    'Accept-Language' => 'en'
                 ])
             )
             ->will($this->returnValue([
@@ -266,14 +307,19 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
 
     public function testDeleteWithAccessToken()
     {
+        $adapterMock = $this->getMock('Kokoroe\Http\Client\Adapter\AdapterInterface');
+
         $clientMock = $this->getMock('Kokoroe\Http\Client');
+        $clientMock->method('getAdapter')
+            ->will($this->returnValue($adapterMock));
 
         $clientMock->method('delete')
             ->with(
                 $this->equalTo(Kokoroe::BASE_API_URL . '/' . Kokoroe::DEFAULT_API_VERSION . '/me'),
                 $this->equalTo([]),
                 $this->equalTo([
-                    'Authorization' => 'Bearer foo'
+                    'Authorization' => 'Bearer foo',
+                    'Accept-Language' => 'en'
                 ])
             )
             ->will($this->returnValue([

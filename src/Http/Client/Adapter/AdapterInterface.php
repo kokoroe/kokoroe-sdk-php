@@ -20,6 +20,22 @@ namespace Kokoroe\Http\Client\Adapter;
  */
 interface AdapterInterface
 {
+
+    /**
+     * Set ssl verification
+     *
+     * @param bool $verify
+     * @return AdapterInterface
+     */
+    public function setSslVerify($verify);
+
+    /**
+     * Check if ssl verification
+     *
+     * @return bool
+     */
+    public function isSslVerify();
+
     /**
      * Sends a request to the server and returns the raw response.
      *

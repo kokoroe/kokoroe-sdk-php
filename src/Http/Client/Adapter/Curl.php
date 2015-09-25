@@ -26,6 +26,11 @@ use RuntimeException;
 class Curl implements AdapterInterface
 {
     /**
+     * @var bool
+     */
+    protected $sslVerify;
+
+    /**
      *
      * @throws \RuntimeException
      */
@@ -36,6 +41,26 @@ class Curl implements AdapterInterface
             throw new RuntimeException('Missing ext/curl');
         }
         // @codeCoverageIgnoreEnd
+
+        $this->sslVerify = true;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setSslVerify($verify)
+    {
+        $this->sslVerify = (bool) $verify;
+
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function isSslVerify()
+    {
+        return $this->sslVerify;
     }
 
     /**
@@ -61,6 +86,11 @@ class Curl implements AdapterInterface
             });
 
             curl_setopt($ch, CURLOPT_HTTPHEADER, array_values($headers));
+        }
+
+        if ($this->sslVerify === false) {
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         }
 
         $curlValue = true;

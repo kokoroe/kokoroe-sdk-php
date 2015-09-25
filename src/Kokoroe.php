@@ -36,6 +36,11 @@ class Kokoroe
     const DEFAULT_API_VERSION = 'v1.0';
 
     /**
+     * @const string Default locale
+     */
+    const DEFAULT_LOCALE = 'en';
+
+    /**
      * @var string
      */
     protected $clientId;
@@ -49,6 +54,11 @@ class Kokoroe
      * @var string
      */
     protected $defaultApiUrl;
+
+    /**
+     * @var string
+     */
+    protected $locale;
 
     /**
      * @var string
@@ -69,6 +79,11 @@ class Kokoroe
      * @var Http\Client
      */
     protected $http;
+
+    /**
+     * @var bool
+     */
+    protected $sslVerify;
 
     /**
      *
@@ -111,6 +126,18 @@ class Kokoroe
             $this->setDefaultApiUrl($options['default_api_url']);
         } else {
             $this->setDefaultApiUrl(self::BASE_API_URL);
+        }
+
+        if (isset($options['locale'])) {
+            $this->setLocale($options['locale']);
+        } else {
+            $this->setLocale(self::DEFAULT_LOCALE);
+        }
+
+        if (isset($options['ssl_verify'])) {
+            $this->setSslVerify($options['ssl_verify']);
+        } else {
+            $this->setSslVerify(true);
         }
 
         return $this;
@@ -237,6 +264,52 @@ class Kokoroe
     }
 
     /**
+     * Set locale
+     *
+     * @param string $locale
+     * @return Kokoroe
+     */
+    public function setLocale($locale)
+    {
+        $this->locale = $locale;
+
+        return $this;
+    }
+
+    /**
+     * Get locale
+     *
+     * @return string
+     */
+    public function getLocale()
+    {
+        return $this->locale;
+    }
+
+    /**
+     * Set ssl verification
+     *
+     * @param bool $verify
+     * @return Kokoroe
+     */
+    public function setSslVerify($verify)
+    {
+        $this->sslVerify = (bool) $verify;
+
+        return $this;
+    }
+
+    /**
+     * Get ssl verification
+     *
+     * @return bool
+     */
+    public function getSslVerify()
+    {
+        return (bool) $this->sslVerify;
+    }
+
+    /**
      * Returns the base Api URL.
      *
      * @return string
@@ -274,6 +347,7 @@ class Kokoroe
     public function setHttpClient(Http\Client $client)
     {
         $this->http = $client;
+        $this->http->getAdapter()->setSslVerify($this->sslVerify);
 
         return $this;
     }
@@ -286,7 +360,7 @@ class Kokoroe
     public function getHttpClient()
     {
         if (empty($this->http)) {
-            $this->http = new Http\Client;
+            $this->setHttpClient(new Http\Client);
         }
 
         return $this->http;
@@ -348,7 +422,8 @@ class Kokoroe
             $data['endpoint'],
             $data['params'],
             [
-                'Authorization' => $this->getAuthorizationHeader($accessToken)
+                'Authorization'     => $this->getAuthorizationHeader($accessToken),
+                'Accept-Language'   => $this->locale
             ]
         );
     }
@@ -373,7 +448,8 @@ class Kokoroe
             $data['params'],
             $body,
             [
-                'Authorization' => $this->getAuthorizationHeader($accessToken)
+                'Authorization'     => $this->getAuthorizationHeader($accessToken),
+                'Accept-Language'   => $this->locale
             ]
         );
     }
@@ -398,7 +474,8 @@ class Kokoroe
             $data['params'],
             $body,
             [
-                'Authorization' => $this->getAuthorizationHeader($accessToken)
+                'Authorization'     => $this->getAuthorizationHeader($accessToken),
+                'Accept-Language'   => $this->locale
             ]
         );
     }
@@ -421,7 +498,8 @@ class Kokoroe
             $data['endpoint'],
             $data['params'],
             [
-                'Authorization' => $this->getAuthorizationHeader($accessToken)
+                'Authorization'     => $this->getAuthorizationHeader($accessToken),
+                'Accept-Language'   => $this->locale
             ]
         );
     }
