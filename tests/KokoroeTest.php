@@ -37,14 +37,15 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
             'client_id'             => '171b379e-57cd-11e5-aea8-eb2b3eb94fb9',
             'client_secret'         => 'foo',
             'default_access_token'  => 'bar',
-            'default_api_version'   => 'v1.2'
+            'default_api_version'   => 'v1.2',
+            'default_api_url'       => 'https://test.kokoroe.co'
         ]);
 
         $this->assertEquals('v1.2', $kokoroe->getDefaultApiVersion());
         $this->assertEquals('171b379e-57cd-11e5-aea8-eb2b3eb94fb9', $kokoroe->getClientId());
         $this->assertEquals('foo', $kokoroe->getClientSecret());
         $this->assertEquals('bar', $kokoroe->getDefaultAccessToken());
-        $this->assertEquals(Kokoroe::BASE_API_URL . '/v1.2', $kokoroe->getBaseApiUrl());
+        $this->assertEquals($kokoroe->getDefaultApiUrl() . '/v1.2', $kokoroe->getBaseApiUrl());
     }
 
     /**

@@ -48,6 +48,11 @@ class Kokoroe
     /**
      * @var string
      */
+    protected $defaultApiUrl;
+
+    /**
+     * @var string
+     */
     protected $defaultApiVersion;
 
     /**
@@ -99,7 +104,13 @@ class Kokoroe
         if (isset($options['default_api_version'])) {
             $this->setDefaultApiVersion($options['default_api_version']);
         } else {
-            $this->setDefaultApiVersion(static::DEFAULT_API_VERSION);
+            $this->setDefaultApiVersion(self::DEFAULT_API_VERSION);
+        }
+
+        if (isset($options['default_api_url'])) {
+            $this->setDefaultApiUrl($options['default_api_url']);
+        } else {
+            $this->setDefaultApiUrl(self::BASE_API_URL);
         }
 
         return $this;
@@ -180,6 +191,29 @@ class Kokoroe
     }
 
     /**
+     * Set default api url
+     *
+     * @param string $url
+     * @return Kokoroe
+     */
+    public function setDefaultApiUrl($url)
+    {
+        $this->defaultApiUrl = $url;
+
+        return $this;
+    }
+
+    /**
+     * Get default api url
+     *
+     * @return string
+     */
+    public function getDefaultApiUrl()
+    {
+        return $this->defaultApiUrl;
+    }
+
+    /**
      * Set default api version
      *
      * @param string $version
@@ -209,7 +243,7 @@ class Kokoroe
      */
     public function getBaseApiUrl()
     {
-        return static::BASE_API_URL . '/' . $this->defaultApiVersion;
+        return $this->defaultApiUrl . '/' . $this->defaultApiVersion;
     }
 
     /**
