@@ -53,7 +53,7 @@ class CurlTest extends \PHPUnit_Framework_TestCase
         ], 2);
 
         $this->assertEquals(200, $response->getStatusCode());
-        $this->assertEquals('{"access_token":"foo"}', (string) $response->getBody());
+        $this->assertEquals(['access_token' => 'foo'], $response->getContent());
     }
 
     public function testSendGetRequest()
@@ -65,7 +65,7 @@ class CurlTest extends \PHPUnit_Framework_TestCase
         ], 2);
 
         $this->assertEquals(200, $response->getStatusCode());
-        $this->assertEquals('{"access_token":"foo"}', (string) $response->getBody());
+        $this->assertEquals(['access_token' => 'foo'], $response->getContent());
     }
 
     public function testSendHeadRequest()
@@ -76,7 +76,7 @@ class CurlTest extends \PHPUnit_Framework_TestCase
         ], 2);
 
         $this->assertEquals(200, $response->getStatusCode());
-        $this->assertEquals('', (string) $response->getBody());
+        $this->assertEquals('', $response->getContent());
     }
 
     public function testSendPostRequest()
@@ -87,7 +87,7 @@ class CurlTest extends \PHPUnit_Framework_TestCase
         ], 2);
 
         $this->assertEquals(200, $response->getStatusCode());
-        $this->assertEquals('{"foo":"bar"}', (string) $response->getBody());
+        $this->assertEquals(['foo' => 'bar'], $response->getContent());
     }
 
     public function testSendPutRequest()
@@ -98,7 +98,7 @@ class CurlTest extends \PHPUnit_Framework_TestCase
         ], 2);
 
         $this->assertEquals(200, $response->getStatusCode());
-        $this->assertEquals('{"foo":"bar"}', (string) $response->getBody());
+        $this->assertEquals(['foo' => 'bar'], $response->getContent());
     }
 
     public function testSendDeleteRequest()
@@ -109,7 +109,7 @@ class CurlTest extends \PHPUnit_Framework_TestCase
         ], 2);
 
         $this->assertEquals(200, $response->getStatusCode());
-        $this->assertEquals('{"access_token":"foo"}', (string) $response->getBody());
+        $this->assertEquals(['access_token' => 'foo'], $response->getContent());
     }
 
     public function testRedirectRequest()
@@ -121,6 +121,6 @@ class CurlTest extends \PHPUnit_Framework_TestCase
         ], 2);
 
         $this->assertEquals(200, $response->getStatusCode());
-        $this->assertEquals('{"access_token":"foo"}', (string) $response->getBody());
+        $this->assertEquals(['access_token' => 'foo'], $response->getContent());
     }
 }

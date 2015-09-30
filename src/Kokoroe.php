@@ -23,7 +23,7 @@ class Kokoroe
     /**
      * @const string Kokoroe SDK version
      */
-    const VERSION = '1.0.0';
+    const VERSION = '1.0.0-alpha';
 
     /**
      * @const string Production API URL.
@@ -409,7 +409,7 @@ class Kokoroe
      *
      * @param  string $endpoint
      * @param  string $accessToken
-     * @return array|null
+     * @return Http\Response
      * @throws UnexpectedValueException
      */
     public function get($endpoint, $accessToken = null)
@@ -434,7 +434,7 @@ class Kokoroe
      * @param  string $endpoint
      * @param  mixed  $body
      * @param  string $accessToken
-     * @return array|null
+     * @return Http\Response
      * @throws UnexpectedValueException
      */
     public function post($endpoint, $body, $accessToken = null)
@@ -460,7 +460,7 @@ class Kokoroe
      * @param  string $endpoint
      * @param  mixed  $body
      * @param  string $accessToken
-     * @return array|null
+     * @return Http\Response
      * @throws UnexpectedValueException
      */
     public function put($endpoint, $body, $accessToken = null)
@@ -485,7 +485,7 @@ class Kokoroe
      *
      * @param  string $endpoint
      * @param  string $accessToken
-     * @return array|null
+     * @return Http\Response
      * @throws UnexpectedValueException
      */
     public function delete($endpoint, $accessToken = null)

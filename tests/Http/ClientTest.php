@@ -14,6 +14,7 @@
 namespace Kokoroe\Tests\Http;
 
 use Kokoroe\Http\Client;
+use UnexpectedValueException;
 
 /**
  * Client Test
@@ -141,66 +142,5 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         ], [
             'Accept-Language' => 'fr-FR'
         ]);
-    }
-
-    /**
-     * @expectedException UnexpectedValueException
-     */
-    public function testBadJsonResponse()
-    {
-        $responseMock = $this->getMock('\Kokoroe\Http\Response');
-        $responseMock->method('getBody')
-            ->will($this->returnValue('{"foo":"bar"'));
-
-        $adapterMock = $this->getMock('\Kokoroe\Http\Client\Adapter\AdapterInterface');
-        $adapterMock->method('send')
-            ->with(
-                $this->equalTo('GET'),
-                $this->equalTo('https://api.kokoroe.co/v1.0/me?access_token=foo'),
-                $this->equalTo(null),
-                [
-                    'Accept-Language' => 'fr-FR'
-                ]
-            )
-            ->will($this->returnValue($responseMock));
-
-        $client = new Client();
-        $client->setAdapter($adapterMock);
-
-        $client->get('https://api.kokoroe.co/v1.0/me', [
-            'access_token' => 'foo'
-        ], [
-            'Accept-Language' => 'fr-FR'
-        ]);
-    }
-
-    public function testJsonResponse()
-    {
-        $responseMock = $this->getMock('\Kokoroe\Http\Response');
-        $responseMock->method('getBody')
-            ->will($this->returnValue('{"foo":"bar"}'));
-
-        $adapterMock = $this->getMock('\Kokoroe\Http\Client\Adapter\AdapterInterface');
-        $adapterMock->method('send')
-            ->with(
-                $this->equalTo('GET'),
-                $this->equalTo('https://api.kokoroe.co/v1.0/me?access_token=foo'),
-                $this->equalTo(null),
-                [
-                    'Accept-Language' => 'fr-FR'
-                ]
-            )
-            ->will($this->returnValue($responseMock));
-
-        $client = new Client();
-        $client->setAdapter($adapterMock);
-
-        $response = $client->get('https://api.kokoroe.co/v1.0/me', [
-            'access_token' => 'foo'
-        ], [
-            'Accept-Language' => 'fr-FR'
-        ]);
-
-        $this->assertEquals('bar', $response['foo']);
     }
 }

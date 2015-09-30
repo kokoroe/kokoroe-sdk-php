@@ -15,7 +15,6 @@ namespace Kokoroe\Http\Client\Adapter;
 
 use Kokoroe;
 use Kokoroe\Http\Response;
-use Kokoroe\Http\Stream;
 use RuntimeException;
 
 /**
@@ -200,20 +199,20 @@ class Curl implements AdapterInterface
         $headers = explode("\r\n", $header);
         unset($headers[0], $header);
 
-        $response = (new Response())->withStatus($info['http_code']);
+        $response = new Response();
+        $response->setStatusCode($info['http_code']);
 
         foreach ($headers as $value) {
             if (strpos($value, ': ') !== false) {
                 list($key, $val) = explode(': ', $value);
-                $response = $response->withAddedHeader($key, $val);
+                $response->headers->set($key, $val);
             }
         }
 
         unset($headers);
 
-        $stream = new Stream('php://memory', 'w');
-        $stream->write($body);
+        $response->setContent($body);
 
-        return $response->withBody($stream);
+        return $response;
     }
 }

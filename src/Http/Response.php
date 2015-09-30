@@ -13,26 +13,61 @@
  */
 namespace Kokoroe\Http;
 
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\StreamInterface;
+use UnexpectedValueException;
 use InvalidArgumentException;
 
 /**
  * Http Response
+ *
+ * @package Kokoroe
  */
-class Response implements ResponseInterface
+class Response
 {
     /**
-     * Map of standard HTTP status code/reason phrases
+     * @var HeaderBag
+     */
+    public $headers;
+
+    /**
+     * @var string
+     */
+    protected $content;
+
+    /**
+     * @var string
+     */
+    protected $version;
+
+    /**
+     * @var int
+     */
+    protected $statusCode;
+
+    /**
+     * @var string
+     */
+    protected $statusText;
+
+    /**
+     * @var string
+     */
+    protected $charset;
+
+    /**
+     * Status codes translation table.
+     *
+     * The list of codes is complete according to the
+     * {@link http://www.iana.org/assignments/http-status-codes/ Hypertext Transfer Protocol (HTTP) Status Code Registry}
+     * (last updated 2012-02-13).
+     *
+     * Unless otherwise noted, the status code is defined in RFC2616.
      *
      * @var array
      */
-    private $phrases = [
-        // INFORMATIONAL CODES
+    public static $statusTexts = [
         100 => 'Continue',
         101 => 'Switching Protocols',
-        102 => 'Processing',
-        // SUCCESS CODES
+        102 => 'Processing',            // RFC2518
         200 => 'OK',
         201 => 'Created',
         202 => 'Accepted',
@@ -40,18 +75,18 @@ class Response implements ResponseInterface
         204 => 'No Content',
         205 => 'Reset Content',
         206 => 'Partial Content',
-        207 => 'Multi-status',
-        208 => 'Already Reported',
-        // REDIRECTION CODES
+        207 => 'Multi-Status',          // RFC4918
+        208 => 'Already Reported',      // RFC5842
+        226 => 'IM Used',               // RFC3229
         300 => 'Multiple Choices',
         301 => 'Moved Permanently',
         302 => 'Found',
         303 => 'See Other',
         304 => 'Not Modified',
         305 => 'Use Proxy',
-        306 => 'Switch Proxy', // Deprecated
+        306 => 'Reserved',
         307 => 'Temporary Redirect',
-        // CLIENT ERROR
+        308 => 'Permanent Redirect',    // RFC7238
         400 => 'Bad Request',
         401 => 'Unauthorized',
         402 => 'Payment Required',
@@ -60,307 +95,297 @@ class Response implements ResponseInterface
         405 => 'Method Not Allowed',
         406 => 'Not Acceptable',
         407 => 'Proxy Authentication Required',
-        408 => 'Request Time-out',
+        408 => 'Request Timeout',
         409 => 'Conflict',
         410 => 'Gone',
         411 => 'Length Required',
         412 => 'Precondition Failed',
         413 => 'Request Entity Too Large',
-        414 => 'Request-URI Too Large',
+        414 => 'Request-URI Too Long',
         415 => 'Unsupported Media Type',
-        416 => 'Requested range not satisfiable',
+        416 => 'Requested Range Not Satisfiable',
         417 => 'Expectation Failed',
-        418 => 'I\'m a teapot',
-        422 => 'Unprocessable Entity',
-        423 => 'Locked',
-        424 => 'Failed Dependency',
-        425 => 'Unordered Collection',
-        426 => 'Upgrade Required',
-        428 => 'Precondition Required',
-        429 => 'Too Many Requests',
-        431 => 'Request Header Fields Too Large',
-        // SERVER ERROR
+        418 => 'I\'m a teapot',                                               // RFC2324
+        422 => 'Unprocessable Entity',                                        // RFC4918
+        423 => 'Locked',                                                      // RFC4918
+        424 => 'Failed Dependency',                                           // RFC4918
+        425 => 'Reserved for WebDAV advanced collections expired proposal',   // RFC2817
+        426 => 'Upgrade Required',                                            // RFC2817
+        428 => 'Precondition Required',                                       // RFC6585
+        429 => 'Too Many Requests',                                           // RFC6585
+        431 => 'Request Header Fields Too Large',                             // RFC6585
         500 => 'Internal Server Error',
         501 => 'Not Implemented',
         502 => 'Bad Gateway',
         503 => 'Service Unavailable',
-        504 => 'Gateway Time-out',
-        505 => 'HTTP Version not supported',
-        506 => 'Variant Also Negotiates',
-        507 => 'Insufficient Storage',
-        508 => 'Loop Detected',
-        511 => 'Network Authentication Required',
+        504 => 'Gateway Timeout',
+        505 => 'HTTP Version Not Supported',
+        506 => 'Variant Also Negotiates (Experimental)',                      // RFC2295
+        507 => 'Insufficient Storage',                                        // RFC4918
+        508 => 'Loop Detected',                                               // RFC5842
+        510 => 'Not Extended',                                                // RFC2774
+        511 => 'Network Authentication Required',                             // RFC6585
     ];
 
     /**
-     * @var string
-     */
-    private $reasonPhrase;
-
-    /**
-     * @var integer
-     */
-    private $statusCode = 200;
-
-    /**
-     * @var string
-     */
-    private $protocol = '1.1';
-
-    /**
-     * @var StreamInterface
-     */
-    private $stream;
-
-    /**
-     * List of all registered headers, as key => array of values.
+     * Constructor.
      *
-     * @var array
-     */
-    private $headers = [];
-
-    /**
-     * Map of normalized header name to original name used to register header.
+     * @param mixed $content The response content, see setContent()
+     * @param int   $status  The response status code
+     * @param array $headers An array of response headers
      *
-     * @var array
+     * @throws \InvalidArgumentException When the HTTP status code is not valid
      */
-    private $headerNames = [];
+    public function __construct($content = '', $status = 200, $headers = [])
+    {
+        $this->headers = new HeaderBag($headers);
+        $this->setContent($content);
+        $this->setStatusCode($status);
+    }
 
     /**
-     * {@inheritdoc}
+     * Sets the response content.
+     *
+     * Valid types are strings, numbers, null, and objects that implement a __toString() method.
+     *
+     * @param mixed $content Content that can be cast to string
+     *
+     * @return Response
+     *
+     * @throws \UnexpectedValueException
+     */
+    public function setContent($content)
+    {
+        if (
+            null !== $content &&
+            !is_string($content) &&
+            !is_numeric($content) &&
+            !is_callable([$content, '__toString'])
+        ) {
+            throw new UnexpectedValueException(sprintf(
+                'The Response content must be a string or object implementing __toString(), "%s" given.',
+                gettype($content)
+            ));
+        }
+
+        $contentType = $this->headers->get('Content-Type');
+
+        if (strpos($contentType, 'application/json') !== false) {
+            $content = $this->processJson($content);
+        }
+
+        $this->content = $content;
+
+        return $this;
+    }
+
+    /**
+     * Gets the current response content.
+     *
+     * @return string|array Content
+     */
+    public function getContent()
+    {
+        return $this->content;
+    }
+
+    /**
+     * Sets the response status code.
+     *
+     * @param int   $code HTTP status code
+     * @param mixed $text HTTP status text
+     *
+     * If the status text is null it will be automatically populated for the known
+     * status codes and left empty otherwise.
+     *
+     * @return Response
+     *
+     * @throws \InvalidArgumentException When the HTTP status code is not valid
+     */
+    public function setStatusCode($code, $text = null)
+    {
+        $this->statusCode = $code = (int) $code;
+        if ($this->isInvalid()) {
+            throw new InvalidArgumentException(sprintf('The HTTP status code "%s" is not valid.', $code));
+        }
+
+        if (null === $text) {
+            $this->statusText = isset(self::$statusTexts[$code]) ? self::$statusTexts[$code] : '';
+
+            return $this;
+        }
+
+        if (false === $text) {
+            $this->statusText = '';
+
+            return $this;
+        }
+
+        $this->statusText = $text;
+
+        return $this;
+    }
+
+    /**
+     * Retrieves the status code for the current web response.
+     *
+     * @return int Status code
      */
     public function getStatusCode()
     {
         return $this->statusCode;
     }
 
+    // http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
     /**
-     * {@inheritdoc}
-     */
-    public function getReasonPhrase()
-    {
-        if (empty($this->reasonPhrase) && isset($this->phrases[$this->statusCode])) {
-            $this->reasonPhrase = $this->phrases[$this->statusCode];
-        }
-
-        return $this->reasonPhrase;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function withStatus($code, $reasonPhrase = '')
-    {
-        $this->validateStatus($code);
-        $new = clone $this;
-        $new->statusCode   = (int) $code;
-        $new->reasonPhrase = $reasonPhrase;
-
-        return $new;
-    }
-
-    /**
-     * Validate a status code.
+     * Is response invalid?
      *
-     * @param integer|string $code
-     * @throws InvalidArgumentException on an invalid status code.
-     */
-    private function validateStatus($code)
-    {
-        if (!is_numeric($code) || is_float($code) || $code < 100 || $code >= 600) {
-            throw new InvalidArgumentException(sprintf(
-                'Invalid status code "%s"; must be an integer between 100 and 599, inclusive',
-                (is_scalar($code) ? $code : gettype($code))
-            ));
-        }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getProtocolVersion()
-    {
-        return $this->protocol;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function withProtocolVersion($version)
-    {
-        $new = clone $this;
-        $new->protocol = $version;
-
-        return $new;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getHeaders()
-    {
-        return $this->headers;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function hasHeader($name)
-    {
-        return array_key_exists(strtolower($name), $this->headerNames);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getHeader($name)
-    {
-        if (!$this->hasHeader($name)) {
-            return [];
-        }
-
-        $header = $this->headerNames[strtolower($name)];
-        $value  = $this->headers[$header];
-        $value  = is_array($value) ? $value : [$value];
-
-        return $value;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getHeaderLine($name)
-    {
-        $value = $this->getHeader($name);
-
-        if (empty($value)) {
-            return '';
-        }
-
-        return implode(',', $value);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function withHeader($name, $value)
-    {
-        if (is_string($value)) {
-            $value = [$value];
-        }
-
-        if (! is_array($value) || ! $this->arrayContainsOnlyStrings($value)) {
-            throw new InvalidArgumentException(
-                'Invalid header value; must be a string or array of strings'
-            );
-        }
-
-        HeaderSecurity::assertValidName($name);
-        self::assertValidHeaderValue($value);
-
-        $normalized = strtolower($name);
-
-        $new = clone $this;
-        $new->headerNames[$normalized] = $name;
-        $new->headers[$name]           = $value;
-
-        return $new;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function withAddedHeader($name, $value)
-    {
-        if (is_string($value)) {
-            $value = [$value];
-        }
-
-        if (!is_array($value) || ! $this->arrayContainsOnlyStrings($value)) {
-            throw new InvalidArgumentException(
-                'Invalid header value; must be a string or array of strings'
-            );
-        }
-
-        HeaderSecurity::assertValidName($name);
-        self::assertValidHeaderValue($value);
-
-        if (!$this->hasHeader($name)) {
-            return $this->withHeader($name, $value);
-        }
-
-        $normalized = strtolower($name);
-        $name       = $this->headerNames[$normalized];
-        $new        = clone $this;
-
-        $new->headers[$name] = array_merge($this->headers[$name], $value);
-
-        return $new;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function withoutHeader($name)
-    {
-        if (!$this->hasHeader($name)) {
-            return clone $this;
-        }
-
-        $normalized = strtolower($name);
-        $original   = $this->headerNames[$normalized];
-        $new        = clone $this;
-
-        unset($new->headers[$original], $new->headerNames[$normalized]);
-
-        return $new;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getBody()
-    {
-        return $this->stream;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function withBody(StreamInterface $body)
-    {
-        $new = clone $this;
-        $new->stream = $body;
-
-        return $new;
-    }
-
-    /**
-     * Test that an array contains only strings
-     *
-     * @param array $array
      * @return bool
      */
-    private function arrayContainsOnlyStrings(array $array)
+    public function isInvalid()
     {
-        return array_reduce($array, function($carry, $item) {
-            if (!is_string($item)) {
-                return false;
-            }
-
-            return $carry;
-        }, true);
+        return $this->statusCode < 100 || $this->statusCode >= 600;
     }
 
     /**
-     * Assert that the provided header values are valid.
+     * Is response informative?
      *
-     * @see http://tools.ietf.org/html/rfc7230#section-3.2
-     * @param string[] $values
-     * @throws InvalidArgumentException
+     * @return bool
      */
-    private static function assertValidHeaderValue(array $values)
+    public function isInformational()
     {
-        array_walk($values, __NAMESPACE__ . '\HeaderSecurity::assertValid');
+        return $this->statusCode >= 100 && $this->statusCode < 200;
+    }
+
+    /**
+     * Is response successful?
+     *
+     * @return bool
+     */
+    public function isSuccessful()
+    {
+        return $this->statusCode >= 200 && $this->statusCode < 300;
+    }
+
+    /**
+     * Is the response a redirect?
+     *
+     * @return bool
+     */
+    public function isRedirection()
+    {
+        return $this->statusCode >= 300 && $this->statusCode < 400;
+    }
+
+    /**
+     * Is there a client error?
+     *
+     * @return bool
+     */
+    public function isClientError()
+    {
+        return $this->statusCode >= 400 && $this->statusCode < 500;
+    }
+
+    /**
+     * Was there a server side error?
+     *
+     * @return bool
+     */
+    public function isServerError()
+    {
+        return $this->statusCode >= 500 && $this->statusCode < 600;
+    }
+
+    /**
+     * Is the response OK?
+     *
+     * @return bool
+     */
+    public function isOk()
+    {
+        return 200 === $this->statusCode;
+    }
+
+    /**
+     * Is the response forbidden?
+     *
+     * @return bool
+     */
+    public function isForbidden()
+    {
+        return 403 === $this->statusCode;
+    }
+
+    /**
+     * Is the response a not found error?
+     *
+     * @return bool
+     */
+    public function isNotFound()
+    {
+        return 404 === $this->statusCode;
+    }
+
+    /**
+     * Is the response a redirect of some form?
+     *
+     * @param string $location
+     *
+     * @return bool
+     */
+    public function isRedirect($location = null)
+    {
+        return in_array($this->statusCode, [201, 301, 302, 303, 307, 308]) && (null === $location ?: $location == $this->headers->get('Location'));
+    }
+
+    /**
+     * Is the response empty?
+     *
+     * @return bool
+     */
+    public function isEmpty()
+    {
+        return in_array($this->statusCode, [204, 304]);
+    }
+
+    /**
+     * Process json
+     *
+     * @param  string $content
+     * @return array
+     */
+    protected function processJson($content)
+    {
+        $json = json_decode($content, true);
+
+        $lastError = JSON_ERROR_NONE;
+
+        if (JSON_ERROR_NONE !== $lastError = json_last_error()) {
+            if (function_exists('json_last_error_msg')) {
+                $message = json_last_error_msg();
+                // @codeCoverageIgnoreStart
+            } else {
+                switch ($lastError) {
+                    case JSON_ERROR_DEPTH:
+                        $message = 'Maximum stack depth exceeded';
+                    case JSON_ERROR_STATE_MISMATCH:
+                        $message = 'Underflow or the modes mismatch';
+                    case JSON_ERROR_CTRL_CHAR:
+                        $message = 'Unexpected control character found';
+                    case JSON_ERROR_SYNTAX:
+                        $message = 'Syntax error';
+                    case JSON_ERROR_UTF8:
+                        $message = 'Malformed UTF-8 characters, possibly incorrectly encoded';
+                    default:
+                        $message = 'Unknown error';
+                }
+            }
+            // @codeCoverageIgnoreEnd
+
+            throw new UnexpectedValueException($message);
+        }
+
+        return $json;
     }
 }

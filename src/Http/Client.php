@@ -14,7 +14,6 @@
 namespace Kokoroe\Http;
 
 use Kokoroe\Http\Client\Adapter\AdapterInterface;
-use UnexpectedValueException;
 
 /**
  * Http Client Interface
@@ -68,7 +67,7 @@ class Client
      * @param  array  $params
      * @param  string $body
      * @param  array  $headers
-     * @return array|null
+     * @return Response
      * @throws UnexpectedValueException
      */
     public function send($method, $url, array $params = [], $body = null, array $headers = [])
@@ -77,42 +76,7 @@ class Client
             $url = $url . '?' . http_build_query($params);
         }
 
-        $response = $this->getAdapter()->send($method, $url, $body, $headers, $this->timeout);
-
-        if (empty($response)) {
-            return null;
-        }
-
-        $json = json_decode((string) $response->getBody(), true);
-
-        $lastError = JSON_ERROR_NONE;
-
-        if (JSON_ERROR_NONE !== $lastError = json_last_error()) {
-            if (function_exists('json_last_error_msg')) {
-                $message = json_last_error_msg();
-                // @codeCoverageIgnoreStart
-            } else {
-                switch ($lastError) {
-                    case JSON_ERROR_DEPTH:
-                        $message = 'Maximum stack depth exceeded';
-                    case JSON_ERROR_STATE_MISMATCH:
-                        $message = 'Underflow or the modes mismatch';
-                    case JSON_ERROR_CTRL_CHAR:
-                        $message = 'Unexpected control character found';
-                    case JSON_ERROR_SYNTAX:
-                        $message = 'Syntax error, malformed JSON';
-                    case JSON_ERROR_UTF8:
-                        $message = 'Malformed UTF-8 characters, possibly incorrectly encoded';
-                    default:
-                        $message = 'Unknown error';
-                }
-            }
-            // @codeCoverageIgnoreEnd
-
-            throw new UnexpectedValueException($message);
-        }
-
-        return $json;
+        return $this->getAdapter()->send($method, $url, $body, $headers, $this->timeout);
     }
 
     /**
@@ -121,7 +85,7 @@ class Client
      * @param  string $url
      * @param  array  $params
      * @param  array  $headers
-     * @return array|null
+     * @return Response
      * @throws UnexpectedValueException
      */
     public function get($url, array $params, array $headers = [])
@@ -136,7 +100,7 @@ class Client
      * @param  array  $params
      * @param  string $body
      * @param  array  $headers
-     * @return array|null
+     * @return Response
      * @throws UnexpectedValueException
      */
     public function post($url, array $params, $body = null, array $headers = [])
@@ -151,7 +115,7 @@ class Client
      * @param  array  $params
      * @param  string $body
      * @param  array  $headers
-     * @return array|null
+     * @return Response
      * @throws UnexpectedValueException
      */
     public function put($url, array $params, $body = null, array $headers = [])
@@ -165,7 +129,7 @@ class Client
      * @param  string $url
      * @param  array  $params
      * @param  array  $headers
-     * @return array|null
+     * @return Response
      * @throws UnexpectedValueException
      */
     public function delete($url, array $params, array $headers = [])

@@ -26,7 +26,11 @@ $kokoroe = new Kokoroe\Kokoroe([
 ]);
 
 // If you provided a 'default_access_token', the '{access-token}' is optional.
-$user = $kokoroe->get('/me', '{access-token}');
+$response = $kokoroe->get('/me', '{access-token}');
+
+if ($response->isSuccessful()) {
+    var_dump($response->getContent()); // dump array
+}
 ```
 
 ## License

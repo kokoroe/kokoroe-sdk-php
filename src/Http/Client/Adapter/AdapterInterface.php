@@ -44,7 +44,7 @@ interface AdapterInterface
      * @param  string  $body    The body of the request.
      * @param  array   $headers The request headers.
      * @param  integer $timeout The timeout in seconds for the request.
-     * @return Psr\Http\Message\ResponseInterface
+     * @return Kokoroe\Http\Response
      */
     public function send($method, $url, $body, array $headers, $timeout);
 }

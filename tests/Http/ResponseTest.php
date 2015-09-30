@@ -14,288 +14,170 @@
 namespace Kokoroe\Tests\Http;
 
 use Kokoroe\Http\Response;
+use ReflectionProperty;
 
 /**
  * Response Test
  */
 class ResponseTest extends \PHPUnit_Framework_TestCase
 {
+    public function testIsSuccessful()
+    {
+        $response = new Response();
+        $this->assertTrue($response->isSuccessful());
+    }
+
     /**
-     * @var Response
+     * @dataProvider getStatusCodeFixtures
      */
-    protected $response;
-
-    public function setUp()
+    public function testSetStatusCode($code, $text, $expectedText)
     {
-        $this->response = new Response();
+        $response = new Response();
+
+        $response->setStatusCode($code, $text);
+
+        $statusText = new ReflectionProperty($response, 'statusText');
+        $statusText->setAccessible(true);
+
+        $this->assertEquals($expectedText, $statusText->getValue($response));
     }
 
-    public function testStatusCodeIs200ByDefault()
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testSetStatusCodeWithBadCode()
     {
-        $this->assertEquals(200, $this->response->getStatusCode());
+        $response = new Response();
+
+        $response->setStatusCode(1337);
     }
 
-    public function testStatusCodeMutatorReturnsCloneWithChanges()
-    {
-        $response = $this->response->withStatus(400);
-        $this->assertNotSame($this->response, $response);
-        $this->assertEquals(400, $response->getStatusCode());
-    }
-
-    public function testProtocolHasAcceptableDefault()
-    {
-        $this->assertEquals('1.1', $this->response->getProtocolVersion());
-    }
-
-    public function testProtocolMutatorReturnsCloneWithChanges()
-    {
-        $response = $this->response->withProtocolVersion('1.0');
-        $this->assertNotSame($this->response, $response);
-        $this->assertEquals('1.0', $response->getProtocolVersion());
-    }
-
-    public function invalidStatusCodes()
+    public function getStatusCodeFixtures()
     {
         return [
-            'too-low'   => [99],
-            'too-high'  => [600],
-            'null'      => [null],
-            'bool'      => [true],
-            'string'    => ['foo'],
-            'array'     => [[200]],
-            'object'    => [(object) [200]]
+            ['200', null, 'OK'],
+            ['200', false, ''],
+            ['200', 'foo', 'foo'],
+            ['199', null, ''],
+            ['199', false, ''],
+            ['199', 'foo', 'foo'],
         ];
     }
 
-    /**
-     * @dataProvider invalidStatusCodes
-     */
-    public function testCannotSetInvalidStatusCode($code)
+
+    public function testIsInformational()
     {
-        $this->setExpectedException('InvalidArgumentException');
-        $this->response->withStatus($code);
+        $response = new Response('', 100);
+        $this->assertTrue($response->isInformational());
+
+        $response = new Response('', 200);
+        $this->assertFalse($response->isInformational());
     }
 
-    public function testReasonPhraseDefaultsToStandards()
+    public function testIsRedirectRedirection()
     {
-        $response = $this->response->withStatus(422);
-        $this->assertEquals('Unprocessable Entity', $response->getReasonPhrase());
+        foreach (array(301, 302, 303, 307) as $code) {
+            $response = new Response('', $code);
+            $this->assertTrue($response->isRedirection());
+            $this->assertTrue($response->isRedirect());
+        }
+
+        $response = new Response('', 304);
+        $this->assertTrue($response->isRedirection());
+        $this->assertFalse($response->isRedirect());
+
+        $response = new Response('', 200);
+        $this->assertFalse($response->isRedirection());
+        $this->assertFalse($response->isRedirect());
+
+        $response = new Response('', 404);
+        $this->assertFalse($response->isRedirection());
+        $this->assertFalse($response->isRedirect());
+
+        $response = new Response('', 301, array('Location' => '/good-uri'));
+        $this->assertFalse($response->isRedirect('/bad-uri'));
+        $this->assertTrue($response->isRedirect('/good-uri'));
     }
 
-    public function testCanSetCustomReasonPhrase()
+    public function testIsNotFound()
     {
-        $response = $this->response->withStatus(422, 'Foo Bar!');
-        $this->assertEquals('Foo Bar!', $response->getReasonPhrase());
+        $response = new Response('', 404);
+        $this->assertTrue($response->isNotFound());
+
+        $response = new Response('', 200);
+        $this->assertFalse($response->isNotFound());
     }
 
-    public function testReasonPhraseCanBeEmpty()
+    public function testIsEmpty()
     {
-        $response = $this->response->withStatus(599);
-        $this->assertInternalType('string', $response->getReasonPhrase());
-        $this->assertEmpty($response->getReasonPhrase());
+        foreach (array(204, 304) as $code) {
+            $response = new Response('', $code);
+            $this->assertTrue($response->isEmpty());
+        }
+
+        $response = new Response('', 200);
+        $this->assertFalse($response->isEmpty());
     }
 
-    public function testBodyMutatorReturnsCloneWithChanges()
+    public function testIsForbidden()
     {
-        $stream  = $this->getMock('Psr\Http\Message\StreamInterface');
-        $response = $this->response->withBody($stream);
-        $this->assertNotSame($this->response, $response);
-        $this->assertSame($stream, $response->getBody());
+        $response = new Response('', 403);
+        $this->assertTrue($response->isForbidden());
+
+        $response = new Response('', 200);
+        $this->assertFalse($response->isForbidden());
     }
 
-    public function testGetHeaderReturnsHeaderValueAsArray()
+    public function testIsOk()
     {
-        $response = $this->response->withHeader('X-Foo', ['Foo', 'Bar']);
-        $this->assertNotSame($this->response, $response);
-        $this->assertEquals(['Foo', 'Bar'], $response->getHeader('X-Foo'));
+        $response = new Response('', 200);
+        $this->assertTrue($response->isOk());
+
+        $response = new Response('', 404);
+        $this->assertFalse($response->isOk());
     }
 
-    public function testGetHeaderLineReturnsHeaderValueAsCommaConcatenatedString()
+    public function testIsServerOrClientError()
     {
-        $response = $this->response->withHeader('X-Foo', ['Foo', 'Bar']);
-        $this->assertNotSame($this->response, $response);
-        $this->assertEquals('Foo,Bar', $response->getHeaderLine('X-Foo'));
-    }
+        $response = new Response('', 404);
+        $this->assertTrue($response->isClientError());
+        $this->assertFalse($response->isServerError());
 
-    public function testGetHeadersKeepsHeaderCaseSensitivity()
-    {
-        $response = $this->response->withHeader('X-Foo', ['Foo', 'Bar']);
-        $this->assertNotSame($this->response, $response);
-        $this->assertEquals([ 'X-Foo' => [ 'Foo', 'Bar' ] ], $response->getHeaders());
-    }
-
-    public function testGetHeadersReturnsCaseWithWhichHeaderFirstRegistered()
-    {
-        $response = $this->response
-            ->withHeader('X-Foo', 'Foo')
-            ->withAddedHeader('x-foo', 'Bar');
-        $this->assertNotSame($this->response, $response);
-        $this->assertEquals([ 'X-Foo' => [ 'Foo', 'Bar' ] ], $response->getHeaders());
-    }
-
-    public function testHasHeaderReturnsFalseIfHeaderIsNotPresent()
-    {
-        $this->assertFalse($this->response->hasHeader('X-Foo'));
-    }
-
-    public function testHasHeaderReturnsTrueIfHeaderIsPresent()
-    {
-        $response = $this->response->withHeader('X-Foo', 'Foo');
-        $this->assertNotSame($this->response, $response);
-        $this->assertTrue($response->hasHeader('X-Foo'));
-    }
-
-    public function testAddHeaderAppendsToExistingHeader()
-    {
-        $response  = $this->response->withHeader('X-Foo', 'Foo');
-        $this->assertNotSame($this->response, $response);
-        $response2 = $response->withAddedHeader('X-Foo', 'Bar');
-        $this->assertNotSame($response, $response2);
-        $this->assertEquals('Foo,Bar', $response2->getHeaderLine('X-Foo'));
-    }
-
-    public function testCanRemoveHeaders()
-    {
-        $response = $this->response->withHeader('X-Foo', 'Foo');
-        $this->assertNotSame($this->response, $response);
-        $this->assertTrue($response->hasHeader('x-foo'));
-        $response2 = $response->withoutHeader('x-foo');
-        $this->assertNotSame($this->response, $response2);
-        $this->assertNotSame($response, $response2);
-        $this->assertFalse($response2->hasHeader('X-Foo'));
-    }
-
-    public function testHeaderRemovalIsCaseInsensitive()
-    {
-        $response = $this->response
-            ->withHeader('X-Foo', 'Foo')
-            ->withAddedHeader('x-foo', 'Bar')
-            ->withAddedHeader('X-FOO', 'Baz');
-        $this->assertNotSame($this->response, $response);
-        $this->assertTrue($response->hasHeader('x-foo'));
-        $response2 = $response->withoutHeader('x-foo');
-        $this->assertNotSame($this->response, $response2);
-        $this->assertNotSame($response, $response2);
-        $this->assertFalse($response2->hasHeader('X-Foo'));
-        $headers = $response2->getHeaders();
-        $this->assertEquals(0, count($headers));
-    }
-
-    public function invalidGeneralHeaderValues()
-    {
-        return [
-            'null'   => [null],
-            'true'   => [true],
-            'false'  => [false],
-            'int'    => [1],
-            'float'  => [1.1],
-            'array'  => [[ 'foo' => [ 'bar' ] ]],
-            'object' => [(object) [ 'foo' => 'bar' ]],
-        ];
+        $response = new Response('', 500);
+        $this->assertFalse($response->isClientError());
+        $this->assertTrue($response->isServerError());
     }
 
     /**
-     * @dataProvider invalidGeneralHeaderValues
+     * @expectedException UnexpectedValueException
+     * @expectedExceptionMessage The Response content must be a string or object implementing __toString(), "object" given.
      */
-    public function testWithHeaderRaisesExceptionForInvalidNestedHeaderValue($value)
+    public function testBadSetContent()
     {
-        $this->setExpectedException('InvalidArgumentException', 'Invalid header value');
-        $this->response->withHeader('X-Foo', [ $value ]);
-    }
-
-    public function invalidHeaderValues()
-    {
-        return [
-            'null'   => [null],
-            'true'   => [true],
-            'false'  => [false],
-            'int'    => [1],
-            'float'  => [1.1],
-            'object' => [(object) [ 'foo' => 'bar' ]],
-        ];
+        $response = new Response();
+        $response->setContent(new \stdClass);
     }
 
     /**
-     * @dataProvider invalidHeaderValues
+     * @expectedException UnexpectedValueException
+     * @expectedExceptionMessage Syntax error
      */
-    public function testWithHeaderRaisesExceptionForInvalidValueType($value)
+    public function testBadJsonResponse()
     {
-        $this->setExpectedException('InvalidArgumentException', 'Invalid header value');
-        $this->response->withHeader('X-Foo', $value);
+        $response = new Response('{"foo":"bar"', 200, [
+            'Content-Type' => 'application/json'
+        ]);
+        $response->getContent();
     }
 
-    /**
-     * @dataProvider invalidGeneralHeaderValues
-     */
-    public function testWithAddedHeaderRaisesExceptionForNonStringNonArrayValue($value)
+    public function testJsonResponse()
     {
-        $this->setExpectedException('InvalidArgumentException', 'must be a string');
-        $this->response->withAddedHeader('X-Foo', $value);
-    }
+        $response = new Response('{"foo":"bar"}', 200, [
+            'Content-Type' => 'application/json'
+        ]);
+        $this->assertEquals(['foo' => 'bar'], $response->getContent());
 
-    public function testWithoutHeaderDoesNothingIfHeaderDoesNotExist()
-    {
-        $this->assertFalse($this->response->hasHeader('X-Foo'));
-        $response = $this->response->withoutHeader('X-Foo');
-        $this->assertNotSame($this->response, $response);
-        $this->assertFalse($response->hasHeader('X-Foo'));
-    }
-
-    public function testGetHeaderReturnsAnEmptyArrayWhenHeaderDoesNotExist()
-    {
-        $this->assertSame([], $this->response->getHeader('X-Foo-Bar'));
-    }
-
-    public function testGetHeaderLineReturnsEmptyStringWhenHeaderDoesNotExist()
-    {
-        $this->assertEmpty($this->response->getHeaderLine('X-Foo-Bar'));
-    }
-
-    public function headersWithInjectionVectors()
-    {
-        return [
-            'name-with-cr'           => ["X-Foo\r-Bar", 'value'],
-            'name-with-lf'           => ["X-Foo\n-Bar", 'value'],
-            'name-with-crlf'         => ["X-Foo\r\n-Bar", 'value'],
-            'name-with-2crlf'        => ["X-Foo\r\n\r\n-Bar", 'value'],
-            'value-with-cr'          => ['X-Foo-Bar', "value\rinjection"],
-            'value-with-lf'          => ['X-Foo-Bar', "value\ninjection"],
-            'value-with-crlf'        => ['X-Foo-Bar', "value\r\ninjection"],
-            'value-with-2crlf'       => ['X-Foo-Bar', "value\r\n\r\ninjection"],
-            'array-value-with-cr'    => ['X-Foo-Bar', ["value\rinjection"]],
-            'array-value-with-lf'    => ['X-Foo-Bar', ["value\ninjection"]],
-            'array-value-with-crlf'  => ['X-Foo-Bar', ["value\r\ninjection"]],
-            'array-value-with-2crlf' => ['X-Foo-Bar', ["value\r\n\r\ninjection"]],
-        ];
-    }
-
-    /**
-     * @dataProvider headersWithInjectionVectors
-     */
-    public function testDoesNotAllowCRLFInjectionWhenCallingWithHeader($name, $value)
-    {
-        $this->setExpectedException('InvalidArgumentException');
-        $this->response->withHeader($name, $value);
-    }
-
-    /**
-     * @dataProvider headersWithInjectionVectors
-     */
-    public function testDoesNotAllowCRLFInjectionWhenCallingWithAddedHeader($name, $value)
-    {
-        $this->setExpectedException('InvalidArgumentException');
-        $this->response->withAddedHeader($name, $value);
-    }
-
-    public function testWithHeaderAllowsHeaderContinuations()
-    {
-        $response = $this->response->withHeader('X-Foo-Bar', "value,\r\n second value");
-        $this->assertEquals("value,\r\n second value", $response->getHeaderLine('X-Foo-Bar'));
-    }
-
-    public function testWithAddedHeaderAllowsHeaderContinuations()
-    {
-        $response = $this->response->withAddedHeader('X-Foo-Bar', "value,\r\n second value");
-        $this->assertEquals("value,\r\n second value", $response->getHeaderLine('X-Foo-Bar'));
+        $response = new Response('{"foo":"bar"}');
+        $this->assertEquals('{"foo":"bar"}', $response->getContent());
     }
 }
