@@ -211,7 +211,9 @@ class Curl implements AdapterInterface
 
         unset($headers);
 
-        $response->setContent($body);
+        if (!empty($body)) {
+            $response->setContent($body);
+        }
 
         return $response;
     }
