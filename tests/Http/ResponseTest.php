@@ -160,7 +160,6 @@ class ResponseTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException UnexpectedValueException
-     * @expectedExceptionMessage Syntax error
      */
     public function testBadJsonResponse()
     {
