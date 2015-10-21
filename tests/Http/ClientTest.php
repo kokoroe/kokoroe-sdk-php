@@ -40,11 +40,23 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testSendRequest()
     {
+        $loggerMock = $this->getMock('Psr\Log\LoggerInterface');
+        $loggerMock->expects($this->once())
+            ->method('info')
+            ->with(
+                $this->equalTo('Send GET request on https://api.kokoroe.co/v1.0/me?access_token=foo'),
+                $this->equalTo([
+                    'headers' => [],
+                    'body' => null
+                ])
+            );
+
         $adapterMock = $this->getMock('\Kokoroe\Http\Client\Adapter\AdapterInterface');
         $adapterMock->method('send')
             ->with($this->equalTo('GET'), $this->equalTo('https://api.kokoroe.co/v1.0/me?access_token=foo'));
 
         $client = new Client();
+        $client->setLogger($loggerMock);
         $client->setAdapter($adapterMock);
 
         $client->send('GET', 'https://api.kokoroe.co/v1.0/me', [

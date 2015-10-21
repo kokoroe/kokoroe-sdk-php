@@ -13,12 +13,17 @@
  */
 namespace Kokoroe;
 
+use Psr\Log\LoggerInterface;
+use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\NullLogger;
+
 /**
  * Class Kokoroe
  *
  * @package Kokoroe
  */
-class Kokoroe
+class Kokoroe implements LoggerAwareInterface
 {
     /**
      * @const string Kokoroe SDK version
@@ -85,6 +90,8 @@ class Kokoroe
      */
     protected $sslVerify;
 
+    use LoggerAwareTrait;
+
     /**
      *
      * @param array $options
@@ -93,6 +100,8 @@ class Kokoroe
     public function __construct(array $options = [])
     {
         $this->setOptions($options);
+
+        $this->setLogger(new NullLogger());
     }
 
     /**
@@ -347,6 +356,7 @@ class Kokoroe
     public function setHttpClient(Http\Client $client)
     {
         $this->http = $client;
+        $this->http->setLogger($this->logger);
         $this->http->getAdapter()->setSslVerify($this->sslVerify);
 
         return $this;

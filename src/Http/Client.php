@@ -14,13 +14,17 @@
 namespace Kokoroe\Http;
 
 use Kokoroe\Http\Client\Adapter\AdapterInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\NullLogger;
 
 /**
  * Http Client Interface
  *
  * @package Kokoroe
  */
-class Client
+class Client implements LoggerAwareInterface
 {
     /**
      * @var AdapterInterface
@@ -31,6 +35,16 @@ class Client
      * @var integer
      */
     protected $timeout = 60;
+
+    use LoggerAwareTrait;
+
+    /**
+     * Constructor
+     */
+    public function __construct()
+    {
+        $this->setLogger(new NullLogger());
+    }
 
     /**
      * Set http client adapter
@@ -75,6 +89,11 @@ class Client
         if (!empty($params)) {
             $url = $url . '?' . http_build_query($params);
         }
+
+        $this->logger->info(sprintf('Send %s request on %s', $method, $url), [
+            'headers'   => $headers,
+            'body'      => $body
+        ]);
 
         return $this->getAdapter()->send($method, $url, $body, $headers, $this->timeout);
     }

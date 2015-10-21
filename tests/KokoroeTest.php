@@ -219,13 +219,20 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
     {
         $adapterMock = $this->getMock('Kokoroe\Http\Client\Adapter\AdapterInterface');
 
+        $loggerMock = $this->getMock('Psr\Log\LoggerInterface');
+
         $clientMock = $this->getMock('Kokoroe\Http\Client');
         $clientMock->method('getAdapter')
             ->will($this->returnValue($adapterMock));
 
+        $clientMock->expects($this->once())
+            ->method('setLogger')
+            ->with($this->equalTo($loggerMock));
+
         $kokoroe = new Kokoroe([
             'client_id' => '171b379e-57cd-11e5-aea8-eb2b3eb94fb9'
         ]);
+        $kokoroe->setLogger($loggerMock);
         $kokoroe->setHttpClient($clientMock);
 
         $kokoroe->get('/me');
