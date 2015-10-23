@@ -40,7 +40,9 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
             'default_api_version'   => 'v1.2',
             'default_api_url'       => 'https://test.kokoroe.co',
             'locale'                => 'fr',
-            'ssl_verify'            => false
+            'ssl_verify'            => false,
+            'user_ip'               => '164.177.100.111',
+            'tracker'               => '99f917d8-7999-11e5-b03a-c3d62dc040e2'
         ]);
 
         $this->assertEquals('v1.2', $kokoroe->getDefaultApiVersion());
@@ -50,6 +52,8 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($kokoroe->getDefaultApiUrl() . '/v1.2', $kokoroe->getBaseApiUrl());
         $this->assertFalse($kokoroe->getSslVerify());
         $this->assertEquals('fr', $kokoroe->getLocale());
+        $this->assertEquals('164.177.100.111', $kokoroe->getUserIp());
+        $this->assertEquals('99f917d8-7999-11e5-b03a-c3d62dc040e2', $kokoroe->getTracker());
     }
 
     /**
@@ -95,18 +99,22 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
                 $this->equalTo(Kokoroe::BASE_API_URL . '/' . Kokoroe::DEFAULT_API_VERSION . '/me'),
                 $this->equalTo([]),
                 $this->equalTo([
-                    'Authorization' => 'Bearer foo',
-                    'Accept-Language' => 'en'
+                    'Authorization'     => 'Bearer foo',
+                    'Accept-Language'   => 'en',
+                    'X-Forwarded-For'   => '164.177.100.111',
+                    'X-Kokoroe-Tracker' => '99f917d8-7999-11e5-b03a-c3d62dc040e2'
                 ])
             )
             ->will($this->returnValue([
-                'id' => 1234,
+                'id'    => 1234,
                 'email' => 'name@domain.tld'
             ]));
 
         $kokoroe = new Kokoroe([
-            'client_id' => '171b379e-57cd-11e5-aea8-eb2b3eb94fb9',
-            'client_secret' => 'foo'
+            'client_id'     => '171b379e-57cd-11e5-aea8-eb2b3eb94fb9',
+            'client_secret' => 'foo',
+            'user_ip'       => '164.177.100.111',
+            'tracker'       => '99f917d8-7999-11e5-b03a-c3d62dc040e2'
         ]);
         $kokoroe->setHttpClient($clientMock);
 

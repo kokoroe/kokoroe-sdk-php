@@ -68,6 +68,16 @@ class Kokoroe implements LoggerAwareInterface
     /**
      * @var string
      */
+    protected $userIp;
+
+    /**
+     * @var string
+     */
+    protected $tracker;
+
+    /**
+     * @var string
+     */
     protected $defaultApiVersion;
 
     /**
@@ -147,6 +157,14 @@ class Kokoroe implements LoggerAwareInterface
             $this->setSslVerify($options['ssl_verify']);
         } else {
             $this->setSslVerify(true);
+        }
+
+        if (isset($options['user_ip'])) {
+            $this->setUserIp($options['user_ip']);
+        }
+
+        if (isset($options['tracker'])) {
+            $this->setTracker($options['tracker']);
         }
 
         return $this;
@@ -296,6 +314,52 @@ class Kokoroe implements LoggerAwareInterface
     }
 
     /**
+     * Set user ip
+     *
+     * @param string $userIp
+     * @return Kokoroe
+     */
+    public function setUserIp($userIp)
+    {
+        $this->userIp = $userIp;
+
+        return $this;
+    }
+
+    /**
+     * Get user ip
+     *
+     * @return string
+     */
+    public function getUserIp()
+    {
+        return $this->userIp;
+    }
+
+     /**
+     * Set user tracker
+     *
+     * @param string $tracker
+     * @return Kokoroe
+     */
+    public function setTracker($tracker)
+    {
+        $this->tracker = $tracker;
+
+        return $this;
+    }
+
+    /**
+     * Get user tracker
+     *
+     * @return string
+     */
+    public function getTracker()
+    {
+        return $this->tracker;
+    }
+
+    /**
      * Set ssl verification
      *
      * @param bool $verify
@@ -415,6 +479,30 @@ class Kokoroe implements LoggerAwareInterface
     }
 
     /**
+     * Get http headers
+     *
+     * @param  string $accessToken
+     * @return array
+     */
+    protected function getHeaders($accessToken = null)
+    {
+        $headers = [];
+
+        $headers['Authorization']   = $this->getAuthorizationHeader($accessToken);
+        $headers['Accept-Language'] = $this->locale;
+
+        if (!empty($this->userIp)) {
+            $headers['X-Forwarded-For'] = $this->userIp;
+        }
+
+        if (!empty($this->tracker)) {
+            $headers['X-Kokoroe-Tracker'] = $this->tracker;
+        }
+
+        return $headers;
+    }
+
+    /**
      * Send get request
      *
      * @param  string $endpoint
@@ -431,10 +519,7 @@ class Kokoroe implements LoggerAwareInterface
         return $this->getHttpClient()->get(
             $data['endpoint'],
             $data['params'],
-            [
-                'Authorization'     => $this->getAuthorizationHeader($accessToken),
-                'Accept-Language'   => $this->locale
-            ]
+            $this->getHeaders($accessToken)
         );
     }
 
@@ -457,10 +542,7 @@ class Kokoroe implements LoggerAwareInterface
             $data['endpoint'],
             $data['params'],
             $body,
-            [
-                'Authorization'     => $this->getAuthorizationHeader($accessToken),
-                'Accept-Language'   => $this->locale
-            ]
+            $this->getHeaders($accessToken)
         );
     }
 
@@ -483,10 +565,7 @@ class Kokoroe implements LoggerAwareInterface
             $data['endpoint'],
             $data['params'],
             $body,
-            [
-                'Authorization'     => $this->getAuthorizationHeader($accessToken),
-                'Accept-Language'   => $this->locale
-            ]
+            $this->getHeaders($accessToken)
         );
     }
 
@@ -507,10 +586,7 @@ class Kokoroe implements LoggerAwareInterface
         return $this->getHttpClient()->delete(
             $data['endpoint'],
             $data['params'],
-            [
-                'Authorization'     => $this->getAuthorizationHeader($accessToken),
-                'Accept-Language'   => $this->locale
-            ]
+            $this->getHeaders($accessToken)
         );
     }
 }
