@@ -283,6 +283,72 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
         ], $response);
     }
 
+    public function testGetWithSignature()
+    {
+        $adapterMock = $this->getMock('Kokoroe\Http\Client\Adapter\AdapterInterface');
+
+        $clientMock = $this->getMock('Kokoroe\Http\Client');
+        $clientMock->method('getAdapter')
+            ->will($this->returnValue($adapterMock));
+
+        $clientMock->method('post')
+            ->with(
+                $this->equalTo(Kokoroe::BASE_API_URL . '/' . Kokoroe::DEFAULT_API_VERSION . '/me'),
+                $this->equalTo([]),
+                $this->equalTo('bar'),
+                $this->equalTo([
+                    'Authorization' => 'Bearer foo',
+                    'Accept-Language' => 'en'
+                ])
+            )
+            ->will($this->returnValue([
+                'id' => 1234,
+                'email' => 'name@domain.tld'
+            ]));
+
+        $kokoroe = new Kokoroe([
+            'client_id' => '171b379e-57cd-11e5-aea8-eb2b3eb94fb9',
+            'client_secret' => 'foo',
+            'signature' => true
+        ]);
+        $kokoroe->setHttpClient($clientMock);
+
+        $response = $kokoroe->post('/me', 'bar', 'foo');
+
+        $this->assertTrue($kokoroe->hasSignature());
+
+        $this->assertEquals([
+            'id' => 1234,
+            'email' => 'name@domain.tld'
+        ], $response);
+
+        $signatureMock = $this->getMock('Kokoroe\Http\Signature\SignatureInterface');
+        $signatureMock->expects($this->once())
+            ->method('setKey')
+            ->with($this->equalTo('foo'));
+
+        $clientMock->expects($this->once())
+            ->method('setSignature')
+            ->with($this->equalTo($signatureMock));
+
+        $kokoroe = new Kokoroe([
+            'client_id' => '171b379e-57cd-11e5-aea8-eb2b3eb94fb9',
+            'client_secret' => 'foo',
+            'signature' => $signatureMock
+        ]);
+        $kokoroe->setHttpClient($clientMock);
+
+        $response = $kokoroe->post('/me', 'bar', 'foo');
+
+        $this->assertTrue($kokoroe->hasSignature());
+        $this->assertEquals($signatureMock, $kokoroe->getSignature());
+
+        $this->assertEquals([
+            'id' => 1234,
+            'email' => 'name@domain.tld'
+        ], $response);
+    }
+
     public function testPutWithAccessToken()
     {
         $adapterMock = $this->getMock('Kokoroe\Http\Client\Adapter\AdapterInterface');

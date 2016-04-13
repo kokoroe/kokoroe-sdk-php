@@ -17,6 +17,9 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\NullLogger;
+use Kokoroe\Http\Signature\SignatureAwareTrait;
+use Kokoroe\Http\Signature\DefaultSignature;
+use Kokoroe\Http\Signature\SignatureInterface;
 
 /**
  * Class Kokoroe
@@ -28,7 +31,7 @@ class Kokoroe implements LoggerAwareInterface
     /**
      * @const string Kokoroe SDK version
      */
-    const VERSION = '1.0.0-alpha';
+    const VERSION = '1.0.0-alpha.1';
 
     /**
      * @const string Production API URL.
@@ -101,6 +104,7 @@ class Kokoroe implements LoggerAwareInterface
     protected $sslVerify;
 
     use LoggerAwareTrait;
+    use SignatureAwareTrait;
 
     /**
      *
@@ -165,6 +169,14 @@ class Kokoroe implements LoggerAwareInterface
 
         if (isset($options['tracker'])) {
             $this->setTracker($options['tracker']);
+        }
+
+        if (isset($options['signature'])) {
+            if (is_bool($options['signature'])) {
+                $this->setSignature(new DefaultSignature());
+            } else if ($options['signature'] instanceof SignatureInterface) {
+                $this->setSignature($options['signature']);
+            }
         }
 
         return $this;
@@ -422,6 +434,12 @@ class Kokoroe implements LoggerAwareInterface
         $this->http = $client;
         $this->http->setLogger($this->logger);
         $this->http->getAdapter()->setSslVerify($this->sslVerify);
+
+        if ($this->hasSignature()) {
+            $this->getSignature()->setKey($this->clientSecret);
+
+            $this->http->setSignature($this->getSignature());
+        }
 
         return $this;
     }

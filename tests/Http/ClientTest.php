@@ -64,6 +64,39 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         ]);
     }
 
+    public function testSendRequestWithSignature()
+    {
+        $loggerMock = $this->getMock('Psr\Log\LoggerInterface');
+        $loggerMock->expects($this->once())
+            ->method('info')
+            ->with(
+                $this->equalTo('Send GET request on https://api.kokoroe.co/v1.0/me?access_token=foo&sign=bar'),
+                $this->equalTo([
+                    'headers' => [],
+                    'body' => null
+                ])
+            );
+
+        $signatureMock = $this->getMock('Kokoroe\Http\Signature\SignatureInterface');
+        $signatureMock->expects($this->once())
+            ->method('sign')
+            ->with($this->equalTo('https://api.kokoroe.co/v1.0/me?access_token=foo'))
+            ->will($this->returnValue('bar'));
+
+        $adapterMock = $this->getMock('\Kokoroe\Http\Client\Adapter\AdapterInterface');
+        $adapterMock->method('send')
+            ->with($this->equalTo('GET'), $this->equalTo('https://api.kokoroe.co/v1.0/me?access_token=foo&sign=bar'));
+
+        $client = new Client();
+        $client->setLogger($loggerMock);
+        $client->setAdapter($adapterMock);
+        $client->setSignature($signatureMock);
+
+        $client->send('GET', 'https://api.kokoroe.co/v1.0/me', [
+            'access_token' => 'foo'
+        ]);
+    }
+
     public function testSendGetRequest()
     {
         $adapterMock = $this->getMock('\Kokoroe\Http\Client\Adapter\AdapterInterface');

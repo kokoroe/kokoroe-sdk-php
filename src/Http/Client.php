@@ -14,6 +14,8 @@
 namespace Kokoroe\Http;
 
 use Kokoroe\Http\Client\Adapter\AdapterInterface;
+use Kokoroe\Http\Signature\SignatureInterface;
+use Kokoroe\Http\Signature\SignatureAwareTrait;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerAwareInterface;
@@ -37,6 +39,7 @@ class Client implements LoggerAwareInterface
     protected $timeout = 60;
 
     use LoggerAwareTrait;
+    use SignatureAwareTrait;
 
     /**
      * Constructor
@@ -74,6 +77,22 @@ class Client implements LoggerAwareInterface
     }
 
     /**
+     * Sign url
+     *
+     * @param  string $url
+     * @param  array  $params
+     * @return string
+     */
+    protected function signUrl($url, array $params = [])
+    {
+        if (!empty($params)) {
+            $url = $url . '?' . http_build_query($params);
+        }
+
+        return $this->signature->sign($url);
+    }
+
+    /**
      * Send request.
      *
      * @param  string $method
@@ -86,6 +105,10 @@ class Client implements LoggerAwareInterface
      */
     public function send($method, $url, array $params = [], $body = null, array $headers = [])
     {
+        if ($this->hasSignature()) {
+            $params['sign'] = $this->signUrl($url, $params);
+        }
+
         if (!empty($params)) {
             $url = $url . '?' . http_build_query($params);
         }

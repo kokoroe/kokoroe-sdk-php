@@ -18,4 +18,8 @@ matrix:
         - php: hhvm
         - php: nightly
 after_script:
-  - php vendor/bin/coveralls
+    - php vendor/bin/coveralls
+branches:
+    only:
+        - master
+        - develop
