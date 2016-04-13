@@ -22,7 +22,8 @@ Add `kokoroe/kokoroe-sdk-php` to your `composer.json`:
 $kokoroe = new Kokoroe\Kokoroe([
     'client_id'             => '{client-id}',
     'client_secret'         => '{client-secret}',
-    'default_access_token'  => '{access-token}' // optional
+    'default_access_token'  => '{access-token}', // optional
+    'signature'             => true // optional
 ]);
 
 // If you provided a 'default_access_token', the '{access-token}' is optional.
