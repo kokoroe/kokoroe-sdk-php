@@ -31,7 +31,7 @@ class Kokoroe implements LoggerAwareInterface
     /**
      * @const string Kokoroe SDK version
      */
-    const VERSION = '1.0.0-alpha';
+    const VERSION = '1.0.0-alpha.1';
 
     /**
      * @const string Production API URL.
