@@ -31,7 +31,7 @@ class Kokoroe implements LoggerAwareInterface
     /**
      * @const string Kokoroe SDK version
      */
-    const VERSION = '1.0.0-alpha.1';
+    const VERSION = '1.0.0-alpha.2';
 
     /**
      * @const string Production API URL.
@@ -67,6 +67,11 @@ class Kokoroe implements LoggerAwareInterface
      * @var string
      */
     protected $locale;
+
+    /**
+     * @var string
+     */
+    protected $country;
 
     /**
      * @var string
@@ -155,6 +160,10 @@ class Kokoroe implements LoggerAwareInterface
             $this->setLocale($options['locale']);
         } else {
             $this->setLocale(self::DEFAULT_LOCALE);
+        }
+
+        if (isset($options['country'])) {
+            $this->setCountry($options['country']);
         }
 
         if (isset($options['ssl_verify'])) {
@@ -326,6 +335,29 @@ class Kokoroe implements LoggerAwareInterface
     }
 
     /**
+     * Set country
+     *
+     * @param string $country
+     * @return Kokoroe
+     */
+    public function setCountry($country)
+    {
+        $this->country = strtoupper($country);
+
+        return $this;
+    }
+
+    /**
+     * Get country
+     *
+     * @return string
+     */
+    public function getCountry()
+    {
+        return $this->country;
+    }
+
+    /**
      * Set user ip
      *
      * @param string $userIp
@@ -473,6 +505,10 @@ class Kokoroe implements LoggerAwareInterface
         if (empty($this->clientSecret)) {
             throw new Exception('Required "client_secret" key not supplied in options');
         }
+
+        if (empty($this->country)) {
+            throw new Exception('Required "country" key not supplied in options');
+        }
     }
 
     /**
@@ -508,6 +544,7 @@ class Kokoroe implements LoggerAwareInterface
 
         $headers['Authorization']   = $this->getAuthorizationHeader($accessToken);
         $headers['Accept-Language'] = $this->locale;
+        $headers['X-Country']       = $this->country;
 
         if (!empty($this->userIp)) {
             $headers['X-Forwarded-For'] = $this->userIp;
