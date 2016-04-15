@@ -31,7 +31,7 @@ class Kokoroe implements LoggerAwareInterface
     /**
      * @const string Kokoroe SDK version
      */
-    const VERSION = '1.0.0-alpha.2';
+    const VERSION = '1.0.0-alpha.3';
 
     /**
      * @const string Production API URL.
@@ -505,10 +505,6 @@ class Kokoroe implements LoggerAwareInterface
         if (empty($this->clientSecret)) {
             throw new Exception('Required "client_secret" key not supplied in options');
         }
-
-        if (empty($this->country)) {
-            throw new Exception('Required "country" key not supplied in options');
-        }
     }
 
     /**
@@ -544,7 +540,10 @@ class Kokoroe implements LoggerAwareInterface
 
         $headers['Authorization']   = $this->getAuthorizationHeader($accessToken);
         $headers['Accept-Language'] = $this->locale;
-        $headers['X-Country']       = $this->country;
+
+        if (!empty($this->country)) {
+            $headers['X-Country'] = $this->country;
+        }
 
         if (!empty($this->userIp)) {
             $headers['X-Forwarded-For'] = $this->userIp;
