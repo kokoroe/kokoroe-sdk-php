@@ -40,6 +40,7 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
             'default_api_version'   => 'v1.2',
             'default_api_url'       => 'https://test.kokoroe.co',
             'locale'                => 'fr',
+            'country'               => 'FR',
             'ssl_verify'            => false,
             'user_ip'               => '164.177.100.111',
             'tracker'               => '99f917d8-7999-11e5-b03a-c3d62dc040e2'
@@ -52,6 +53,7 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($kokoroe->getDefaultApiUrl() . '/v1.2', $kokoroe->getBaseApiUrl());
         $this->assertFalse($kokoroe->getSslVerify());
         $this->assertEquals('fr', $kokoroe->getLocale());
+        $this->assertEquals('FR', $kokoroe->getCountry());
         $this->assertEquals('164.177.100.111', $kokoroe->getUserIp());
         $this->assertEquals('99f917d8-7999-11e5-b03a-c3d62dc040e2', $kokoroe->getTracker());
     }
@@ -102,7 +104,8 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
                     'Authorization'     => 'Bearer foo',
                     'Accept-Language'   => 'en',
                     'X-Forwarded-For'   => '164.177.100.111',
-                    'X-Kokoroe-Tracker' => '99f917d8-7999-11e5-b03a-c3d62dc040e2'
+                    'X-Kokoroe-Tracker' => '99f917d8-7999-11e5-b03a-c3d62dc040e2',
+                    'X-Country'         => 'FR'
                 ])
             )
             ->will($this->returnValue([
@@ -113,6 +116,7 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
         $kokoroe = new Kokoroe([
             'client_id'     => '171b379e-57cd-11e5-aea8-eb2b3eb94fb9',
             'client_secret' => 'foo',
+            'country'       => 'FR',
             'user_ip'       => '164.177.100.111',
             'tracker'       => '99f917d8-7999-11e5-b03a-c3d62dc040e2'
         ]);
@@ -139,8 +143,9 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
                 $this->equalTo(Kokoroe::BASE_API_URL . '/' . Kokoroe::DEFAULT_API_VERSION . '/me'),
                 $this->equalTo([]),
                 $this->equalTo([
-                    'Authorization' => 'Bearer bar',
-                    'Accept-Language' => 'en'
+                    'Authorization'     => 'Bearer bar',
+                    'Accept-Language'   => 'en',
+                    'X-Country'         => 'FR'
                 ])
             )
             ->will($this->returnValue([
@@ -149,8 +154,9 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
             ]));
 
         $kokoroe = new Kokoroe([
-            'client_id' => '171b379e-57cd-11e5-aea8-eb2b3eb94fb9',
-            'client_secret' => 'foo'
+            'client_id'     => '171b379e-57cd-11e5-aea8-eb2b3eb94fb9',
+            'client_secret' => 'foo',
+            'country'       => 'FR'
         ]);
         $kokoroe->setHttpClient($clientMock);
         $kokoroe->setDefaultAccessToken('bar');
@@ -178,8 +184,9 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
                     'fields' => 'email'
                 ]),
                 $this->equalTo([
-                    'Authorization' => 'Basic MTcxYjM3OWUtNTdjZC0xMWU1LWFlYTgtZWIyYjNlYjk0ZmI5Og==',
-                    'Accept-Language' => 'en'
+                    'Authorization'     => 'Basic MTcxYjM3OWUtNTdjZC0xMWU1LWFlYTgtZWIyYjNlYjk0ZmI5Og==',
+                    'Accept-Language'   => 'en',
+                    'X-Country'         => 'FR'
                 ])
             )
             ->will($this->returnValue([
@@ -188,8 +195,9 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
             ]));
 
         $kokoroe = new Kokoroe([
-            'client_id' => '171b379e-57cd-11e5-aea8-eb2b3eb94fb9',
-            'client_secret' => 'foo'
+            'client_id'     => '171b379e-57cd-11e5-aea8-eb2b3eb94fb9',
+            'client_secret' => 'foo',
+            'country'       => 'FR'
         ]);
         $kokoroe->setHttpClient($clientMock);
 
@@ -246,6 +254,34 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
         $kokoroe->get('/me');
     }
 
+    /**
+     * @expectedException Kokoroe\Exception
+     * @expectedExceptionMessage Required "country" key not supplied in options
+     */
+    public function testGetWithoutCountry()
+    {
+        $adapterMock = $this->getMock('Kokoroe\Http\Client\Adapter\AdapterInterface');
+
+        $loggerMock = $this->getMock('Psr\Log\LoggerInterface');
+
+        $clientMock = $this->getMock('Kokoroe\Http\Client');
+        $clientMock->method('getAdapter')
+            ->will($this->returnValue($adapterMock));
+
+        $clientMock->expects($this->once())
+            ->method('setLogger')
+            ->with($this->equalTo($loggerMock));
+
+        $kokoroe = new Kokoroe([
+            'client_id'     => '171b379e-57cd-11e5-aea8-eb2b3eb94fb9',
+            'client_secret' => 'foo'
+        ]);
+        $kokoroe->setLogger($loggerMock);
+        $kokoroe->setHttpClient($clientMock);
+
+        $kokoroe->get('/me');
+    }
+
     public function testPostWithAccessToken()
     {
         $adapterMock = $this->getMock('Kokoroe\Http\Client\Adapter\AdapterInterface');
@@ -260,8 +296,9 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
                 $this->equalTo([]),
                 $this->equalTo('bar'),
                 $this->equalTo([
-                    'Authorization' => 'Bearer foo',
-                    'Accept-Language' => 'en'
+                    'Authorization'     => 'Bearer foo',
+                    'Accept-Language'   => 'en',
+                    'X-Country'         => 'FR'
                 ])
             )
             ->will($this->returnValue([
@@ -270,8 +307,9 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
             ]));
 
         $kokoroe = new Kokoroe([
-            'client_id' => '171b379e-57cd-11e5-aea8-eb2b3eb94fb9',
-            'client_secret' => 'foo'
+            'client_id'     => '171b379e-57cd-11e5-aea8-eb2b3eb94fb9',
+            'client_secret' => 'foo',
+            'country'       => 'FR'
         ]);
         $kokoroe->setHttpClient($clientMock);
 
@@ -297,8 +335,9 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
                 $this->equalTo([]),
                 $this->equalTo('bar'),
                 $this->equalTo([
-                    'Authorization' => 'Bearer foo',
-                    'Accept-Language' => 'en'
+                    'Authorization'     => 'Bearer foo',
+                    'Accept-Language'   => 'en',
+                    'X-Country'         => 'FR'
                 ])
             )
             ->will($this->returnValue([
@@ -307,9 +346,10 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
             ]));
 
         $kokoroe = new Kokoroe([
-            'client_id' => '171b379e-57cd-11e5-aea8-eb2b3eb94fb9',
+            'client_id'     => '171b379e-57cd-11e5-aea8-eb2b3eb94fb9',
             'client_secret' => 'foo',
-            'signature' => true
+            'country'       => 'FR',
+            'signature'     => true
         ]);
         $kokoroe->setHttpClient($clientMock);
 
@@ -332,9 +372,10 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
             ->with($this->equalTo($signatureMock));
 
         $kokoroe = new Kokoroe([
-            'client_id' => '171b379e-57cd-11e5-aea8-eb2b3eb94fb9',
+            'client_id'     => '171b379e-57cd-11e5-aea8-eb2b3eb94fb9',
             'client_secret' => 'foo',
-            'signature' => $signatureMock
+            'country'       => 'FR',
+            'signature'     => $signatureMock
         ]);
         $kokoroe->setHttpClient($clientMock);
 
@@ -363,8 +404,9 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
                 $this->equalTo([]),
                 $this->equalTo('bar'),
                 $this->equalTo([
-                    'Authorization' => 'Bearer foo',
-                    'Accept-Language' => 'en'
+                    'Authorization'     => 'Bearer foo',
+                    'Accept-Language'   => 'en',
+                    'X-Country'         => 'FR'
                 ])
             )
             ->will($this->returnValue([
@@ -373,8 +415,9 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
             ]));
 
         $kokoroe = new Kokoroe([
-            'client_id' => '171b379e-57cd-11e5-aea8-eb2b3eb94fb9',
-            'client_secret' => 'foo'
+            'client_id'     => '171b379e-57cd-11e5-aea8-eb2b3eb94fb9',
+            'client_secret' => 'foo',
+            'country'       => 'FR'
         ]);
         $kokoroe->setHttpClient($clientMock);
 
@@ -399,8 +442,9 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
                 $this->equalTo(Kokoroe::BASE_API_URL . '/' . Kokoroe::DEFAULT_API_VERSION . '/me'),
                 $this->equalTo([]),
                 $this->equalTo([
-                    'Authorization' => 'Bearer foo',
-                    'Accept-Language' => 'en'
+                    'Authorization'     => 'Bearer foo',
+                    'Accept-Language'   => 'en',
+                    'X-Country'         => 'FR'
                 ])
             )
             ->will($this->returnValue([
@@ -409,8 +453,9 @@ class KokoroeTest extends \PHPUnit_Framework_TestCase
             ]));
 
         $kokoroe = new Kokoroe([
-            'client_id' => '171b379e-57cd-11e5-aea8-eb2b3eb94fb9',
-            'client_secret' => 'foo'
+            'client_id'     => '171b379e-57cd-11e5-aea8-eb2b3eb94fb9',
+            'client_secret' => 'foo',
+            'country'       => 'FR'
         ]);
         $kokoroe->setHttpClient($clientMock);
 
