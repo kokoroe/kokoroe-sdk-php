@@ -24,7 +24,7 @@ $kokoroe = new Kokoroe\Kokoroe([
     'client_secret'         => '{client-secret}',
     'country'               => 'FR',
     'locale'                => 'fr',
-    'user_ip'               => $_SERVER['REMOTE_ADDR'], // use real ip of user.
+    'user_id'               => $_SERVER['REMOTE_ADDR'], // use real ip of user.
     'default_access_token'  => '{access-token}', // optional
     'signature'             => true // optional
 ]);
@@ -46,13 +46,13 @@ if ($response->isSuccessful()) {
 | -------------------- | ------ | ---------------------- | ------------------------------------------------------ | -------- |
 | client_id            | string | null                   | The id of your application, Format: UUID.              | yes      |
 | client_secret        | string | null                   | The secret key of yout application.                    | yes      |
-| user_ip              | string | null                   | The IP address of user.                                | yes      |
-| country              | strung | null                   | The country code, Ex: FR.                              | yes      |
 | default_access_token | string | null                   | The default access_token.                              | no       |
 | default_api_version  | string | v1.0                   | The default API version.                               | no       |
 | default_api_url      | string | https://api.kokoroe.co | The default API url.                                   | no       |
 | locale               | string | en                     | The locale of response, Ex: en                         | no       |
+| country              | strung | null                   | The country code, Ex: FR.                              | yes      |
 | ssl_verify           | bool   | true                   | Enable or disable the verification of SSL certificate. | no       |
+| user_ip              | string | null                   | The IP address of user.                                | yes      |
 | tracker              | string | null                   | The Tracker-ID for identifie request.                  | no       |
 | signature            | bool   | null                   | Enable or disable the signature of requests.           | no       |
 
