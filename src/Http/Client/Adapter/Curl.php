@@ -79,6 +79,18 @@ class Curl implements AdapterInterface
             Kokoroe\Kokoroe::VERSION
         ));
 
+        $isMultiPart = false;
+        
+        //Add file management in post or put process
+        if (is_array($body)) {
+            foreach ($body as $key => $file) {
+                if (is_a($file, 'SplFileInfo')) {
+                    $isMultiPart = true;
+                    $body[$key] = curl_file_create($file->getRealPath(), $file->getMimeType(), $file->getFilename());
+                }
+            }
+        }
+
         if (!empty($headers)) {
             array_walk($headers, function(&$value, $key) {
                 $value = sprintf('%s: %s', $key, $value);
@@ -107,7 +119,8 @@ class Curl implements AdapterInterface
                 break;
 
             case 'POST':
-                if (!is_string($body)) {
+                if (!$isMultiPart &&
+                    !is_string($body)) {
                     $body = http_build_query($body, '', '&');
                 }
 
@@ -115,7 +128,8 @@ class Curl implements AdapterInterface
                 break;
 
             case 'PUT':
-                if (!is_string($body)) {
+                if (!$isMultiPart &&
+                    !is_string($body)) {
                     $body = http_build_query($body, '', '&');
                 }
 
