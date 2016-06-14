@@ -90,6 +90,28 @@ class CurlTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(['foo' => 'bar'], $response->getContent());
     }
 
+    public function testSendPostRequestWithFile()
+    {
+        $fileMock = new \SplFileInfo(__DIR__ . '/_Files/test.txt');
+
+        $datas = [
+            'foo' => 'bar',
+            'file' => $fileMock
+        ];
+
+        $expected = [
+            'foo' => 'bar'
+        ];
+
+        $curl = new Curl();
+        $response = $curl->send('POST', 'http://localhost:1337/?access_token=foo', $datas, [
+            'Accept' => 'application/json'
+        ], 2);
+
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEquals($expected, $response->getContent());
+    }
+
     public function testSendPutRequest()
     {
         $curl = new Curl();
