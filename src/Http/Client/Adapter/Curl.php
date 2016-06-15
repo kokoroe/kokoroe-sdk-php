@@ -79,6 +79,17 @@ class Curl implements AdapterInterface
             Kokoroe\Kokoroe::VERSION
         ));
 
+        $isMultiPart = false;
+
+        if (is_array($body)) {
+            foreach ($body as $key => $file) {
+                if (is_a($file, 'SplFileInfo')) {
+                    $isMultiPart = true;
+                    $body[$key] = curl_file_create($file->getRealPath(), mime_content_type($file->getRealPath()), $file->getFilename());
+                }
+            }
+        }
+
         if (!empty($headers)) {
             array_walk($headers, function(&$value, $key) {
                 $value = sprintf('%s: %s', $key, $value);
@@ -107,7 +118,8 @@ class Curl implements AdapterInterface
                 break;
 
             case 'POST':
-                if (!is_string($body)) {
+                if (!$isMultiPart &&
+                    !is_string($body)) {
                     $body = http_build_query($body, '', '&');
                 }
 
@@ -115,7 +127,8 @@ class Curl implements AdapterInterface
                 break;
 
             case 'PUT':
-                if (!is_string($body)) {
+                if (!$isMultiPart &&
+                    !is_string($body)) {
                     $body = http_build_query($body, '', '&');
                 }
 
