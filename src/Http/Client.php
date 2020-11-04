@@ -113,11 +113,6 @@ class Client implements LoggerAwareInterface
             $url = $url . '?' . http_build_query($params);
         }
 
-        $this->logger->info(sprintf('Send %s request on %s', $method, $url), [
-            'headers'   => $headers,
-            'body'      => $body
-        ]);
-
         return $this->getAdapter()->send($method, $url, $body, $headers, $this->timeout);
     }
 
